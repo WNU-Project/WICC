@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0) {
-        printf("WICC wpy+.exe 0.1.0 (Python+ Interpiler)\n");
+        printf("WICC wpy+.exe 1.0.0 (Python+ Interpiler)\n");
         printf("Copyright (C) 2025 WNU Project\n");
         printf("License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>\n");
         printf("This is free software: you are free to change and redistribute it.\n");
