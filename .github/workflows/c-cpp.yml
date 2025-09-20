@@ -1,0 +1,29 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install build tools
+      run: sudo apt-get update && sudo apt-get install -y build-essential
+
+    - name: Build
+      run: |
+        gcc -Wall -Wextra -std=c11 -c main.c -o main.o
+        gcc -Wall -Wextra -std=c11 -c lexer.c -o lexer.o
+        gcc -Wall -Wextra -std=c11 -c parser.c -o parser.o
+        gcc -Wall -Wextra -std=c11 -c interpiler.c -o interpiler.o
+        gcc -Wall -Wextra -std=c11 -o wpy+ main.o lexer.o parser.o interpiler.o
+
+    - name: Run hello.pyp
+      run: ./wpy+ hello.pyp
+
