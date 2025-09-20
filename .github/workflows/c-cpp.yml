@@ -10,48 +10,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y build-essential
-
       - name: Build wpy+
         working-directory: interpilers/wpy+
-        run: |
-          if [ -f Makefile ]; then
-            make
-          else
-            gcc -Wall -Wextra -std=c11 -c main.c -o main.o
-            gcc -Wall -Wextra -std=c11 -c lexer.c -o lexer.o
-            gcc -Wall -Wextra -std=c11 -c parser.c -o parser.o
-            gcc -Wall -Wextra -std=c11 -c interpiler.c -o interpiler.o
-            gcc -Wall -Wextra -std=c11 -o wpy+ main.o lexer.o parser.o interpiler.o
-          fi
-
+        run: make
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: wpy-binary
+          name: wpy-binary   # 👈 consistent name
           path: interpilers/wpy+/wpy+
 
   test:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Download binary
         uses: actions/download-artifact@v4
         with:
-          name: wpy-binary
+          name: wpy-binary   # 👈 must match exactly
           path: interpilers/wpy+
-
       - name: Run hello.pyp
         working-directory: interpilers/wpy+
         run: |
           chmod +x wpy+
-          echo "Listing contents:"
-          ls -la
           ./wpy+ hello.pyp
