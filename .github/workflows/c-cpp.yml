@@ -32,4 +32,4 @@ jobs:
 
     - name: Run hello.pyp
       working-directory: interpilers/wpy+
-      run: /interpilers/wpy+/wpy+.exe interpilers/wpy+/hello.pyp
+      run: ./wpy+ hello.pyp
