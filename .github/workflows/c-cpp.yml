@@ -24,4 +24,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run hello.pyp
         working-directory: interpilers/wpy+
-        run: interpilers/wpy+/wpy+.exe interpilers/wpy+/hello.pyp
+        run: |
+          set -eux
+          echo "Listing interpilers/wpy+ contents:"
+          ls -la
+          # Prefer Linux-style binary name, fall back to .exe if present
+          if [ -x ./wpy+ ]; then
+            ./wpy+ hello.pyp
+          elif [ -x ./wpy+.exe ]; then
+            ./wpy+.exe hello.pyp
+          else
+            echo "No executable found: expected ./wpy+ or ./wpy+.exe" >&2
+            exit 2
+          fi
