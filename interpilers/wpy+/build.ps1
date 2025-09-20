@@ -18,3 +18,5 @@ Write-Host "Running..." -ForegroundColor Green
 .\wpy+.exe C:\Users\tadeo\OneDrive\Documents\GitHub\WICC\interpilers\wpy+\hello.pyp
 Write-Host "Running help Command..." -ForegroundColor DarkGreen
 .\wpy+.exe --help
+Write-Host "Running version Command" -ForegroundColor DarkGreen
+.\wpy+.exe --version

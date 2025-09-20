@@ -30,6 +30,9 @@ typedef enum {
     TOKEN_BANGEQ,
     TOKEN_LT,
     TOKEN_GT,
+    TOKEN_HASH,     // #
+    TOKEN_INCLUDE,  // #include directive (optional)
+
 
     // Delimiters
     TOKEN_LPAREN,

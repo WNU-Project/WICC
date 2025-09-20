@@ -22,12 +22,12 @@ static char *strndup_local(const char *s, size_t n) {
 // -----------------------------
 // Lexer state
 // -----------------------------
-static const char *source;
+static const char *source = NULL;
 static int position = 0;
 static int line = 1;
 
 // Forward declarations
-Token next_token();
+Token next_token(void);
 static Token make_token(TokenType type, const char *lexeme);
 static int is_keyword(const char *lexeme, TokenType *out_type);
 
@@ -56,20 +56,29 @@ char *load_file(const char *path) {
 }
 
 // -----------------------------
+// Source initializer
+// -----------------------------
+void set_source(const char *src) {
+    source = src;
+    position = 0;
+    line = 1;
+}
+
+// -----------------------------
 // Tokenizer
 // -----------------------------
-Token next_token() {
+Token next_token(void) {
     // Skip whitespace
-    while (isspace(source[position])) {
+    while (source && isspace(source[position])) {
         if (source[position] == '\n') line++;
         position++;
     }
 
-    char c = source[position];
-
-    if (c == '\0') {
+    if (!source || source[position] == '\0') {
         return make_token(TOKEN_EOF, "EOF");
     }
+
+    char c = source[position];
 
     // Identifiers / keywords
     if (isalpha(c) || c == '_') {
@@ -110,6 +119,19 @@ Token next_token() {
         return make_token(TOKEN_STRING, lexeme);
     }
 
+    // Preprocessor / directives starting with '#'
+    if (c == '#') {
+     position++;
+     int start = position;
+     while (isalnum(source[position])) position++;
+     int length = position - start;
+     char *lexeme = strndup_local(source + start, length);
+     if (strcmp(lexeme, "include") == 0) {
+        return make_token(TOKEN_INCLUDE, lexeme);
+     }
+     return make_token(TOKEN_HASH, lexeme);
+    }
+
     // Single-character tokens
     switch (c) {
         case '(': position++; return make_token(TOKEN_LPAREN, "(");
@@ -122,6 +144,14 @@ Token next_token() {
         case '-': position++; return make_token(TOKEN_MINUS, "-");
         case '*': position++; return make_token(TOKEN_STAR, "*");
         case '/': position++; return make_token(TOKEN_SLASH, "/");
+        case '<': position++; return make_token(TOKEN_LT, "<");
+        case '>': position++; return make_token(TOKEN_GT, ">");
+        case '#':
+            if (source[position+1] == 'i') {
+                position += 2;
+                return make_token(TOKEN_INCLUDE, "#include");
+            }
+            return make_token(TOKEN_HASH, "#");
         case '=':
             if (source[position+1] == '=') {
                 position += 2;

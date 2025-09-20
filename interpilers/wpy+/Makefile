@@ -6,7 +6,7 @@ CFLAGS = -Wall -Wextra -std=c11
 TARGET = wpy+.exe
 
 # Source files
-SRCS = main.c lexer.c
+SRCS = main.c lexer.c parser.c interpiler.c
 OBJS = $(SRCS:.c=.o)
 
 # Default build
