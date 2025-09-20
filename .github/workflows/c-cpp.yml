@@ -15,6 +15,9 @@ jobs:
 
     - name: Install build tools
       run: sudo apt-get update && sudo apt-get install -y build-essential
+    - name: Run REPL
+      run: ./interplask-app-REPL.rb
+      working-directory: interplask/app/myapp-httpd
 
     - name: Build
       run: |
