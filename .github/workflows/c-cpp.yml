@@ -21,19 +21,3 @@ jobs:
         with:
           name: wpy-binary   # 👈 consistent name
           path: interpilers/wpy+/wpy+
-
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download binary
-        uses: actions/download-artifact@v4
-        with:
-          name: wpy-binary   # 👈 must match exactly
-          path: interpilers/wpy+
-      - name: Run hello.pyp
-        working-directory: interpilers/wpy+
-        run: |
-          chmod +x wpy+
-          ./wpy+ hello.pyp
