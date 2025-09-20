@@ -15,6 +15,6 @@ make
 
 # Run the resulting executable with a test argument
 Write-Host "Running..." -ForegroundColor Green
-.\wpy+.exe hello
-
-# End of script
+.\wpy+.exe C:\Users\tadeo\OneDrive\Documents\GitHub\WICC\interpilers\wpy+\hello.pyp
+Write-Host "Running help Command..." -ForegroundColor DarkGreen
+.\wpy+.exe --help
