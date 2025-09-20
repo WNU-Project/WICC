@@ -1,7 +1,7 @@
-// lexer.h
 #ifndef LEXER_H
 #define LEXER_H
 
+#include <stdbool.h>
 #include "tokens.h"
 
 char *load_file(const char *path);

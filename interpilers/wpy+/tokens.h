@@ -44,7 +44,8 @@ typedef enum {
     TOKEN_DOT,
 
     // Special
-    TOKEN_COMMENT,
+    TOKEN_COMMENT_ONELINE,
+    TOKEN_COMMENT_MULTILINE,
     TOKEN_EOF
 } TokenType;
 
