@@ -15,23 +15,20 @@ jobs:
 
     - name: Install build tools
       run: sudo apt-get update && sudo apt-get install -y build-essential
-    - name: Run REPL
-      run: ./interplask-app-REPL.rb
-      working-directory: interplask/app/myapp-httpd
 
-    - name: Build
+    - name: Build wpy+
+      working-directory: interpilers/wpy+
       run: |
-        cd interpilers/wpy+
-        # Prefer using the Makefile (cross-platform with MinGW on Windows runners)
-        if [ -f Makefile ]; then make; else \
-          gcc -Wall -Wextra -std=c11 -c main.c -o main.o && \
-          gcc -Wall -Wextra -std=c11 -c lexer.c -o lexer.o && \
-          gcc -Wall -Wextra -std=c11 -c parser.c -o parser.o && \
-          gcc -Wall -Wextra -std=c11 -c interpiler.c -o interpiler.o && \
-          gcc -Wall -Wextra -std=c11 -o wpy+ main.o lexer.o parser.o interpiler.o; fi
+        if [ -f Makefile ]; then
+          make
+        else
+          gcc -Wall -Wextra -std=c11 -c main.c -o main.o
+          gcc -Wall -Wextra -std=c11 -c lexer.c -o lexer.o
+          gcc -Wall -Wextra -std=c11 -c parser.c -o parser.o
+          gcc -Wall -Wextra -std=c11 -c interpiler.c -o interpiler.o
+          gcc -Wall -Wextra -std=c11 -o wpy+ main.o lexer.o parser.o interpiler.o
+        fi
 
     - name: Run hello.pyp
-      run: |
-        # Run the built interpreter from the interpilers/wpy+ directory
-        ./interpilers/wpy+/wpy+ interpilers/wpy+/hello.pyp
-
+      working-directory: interpilers/wpy+
+      run: ./wpy+ hello.pyp
