@@ -7,7 +7,7 @@ Just as GCC (GNU Compiler Collection) unified the C family, WICC unifies the **P
 
 ## 🌍 Philosophy
 
-WICC is not just a toolchain. It is a **bridge** — a Bringe — between worlds:
+WICC is not just a toolchain. It is a **bridge** — a Bridge — between worlds:
 
 - From **Python**’s simplicity to **C**’s discipline.
 - From **interpreted scripting** to **compiled systems programming**.
