@@ -75,3 +75,5 @@ wicc-python++ game.p++ -o game.exe
 # Run Python# with runtime
 wicc-python# app.p# --run
 ```
+
+[Choco Package](https://community.chocolatey.org/packages/wpyplus/1.0.0)

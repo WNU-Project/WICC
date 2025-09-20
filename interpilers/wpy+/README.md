@@ -29,3 +29,5 @@ wpy+/
 
 📜 License
 This project is part of the WNU Project and is licensed under the GNU General Public License v3.0 or later. See the [LICENSE](LICENSE.md) file for details.
+
+[Python+ Interpiler Choco Package](https://community.chocolatey.org/packages/wpyplus/1.0.0)
