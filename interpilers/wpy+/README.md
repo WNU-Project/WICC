@@ -16,14 +16,16 @@ bridge from Python’s readability to C’s structure.
 
 ---
 
-## 📂 Repository Layout
+## 📂 Repository Layout\
 
+```text
 wpy+/ 
 ├── main.c # Entry point for the interpiler
 ├── Makefile # Build rules
 ├── build.ps1 # PowerShell build script (clean, build, run)
 ├── wpy+.exe # Generated executable (after build)
 └── README.md # This file
+```
 
 📜 License
 This project is part of the WNU Project and is licensed under the GNU General Public License v3.0 or later. See the [LICENSE](LICENSE.md) file for details.
