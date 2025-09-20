@@ -18,6 +18,7 @@ jobs:
 
     - name: Build
       run: |
+        cd interpilers/wpy+
         gcc -Wall -Wextra -std=c11 -c main.c -o main.o
         gcc -Wall -Wextra -std=c11 -c lexer.c -o lexer.o
         gcc -Wall -Wextra -std=c11 -c parser.c -o parser.o
