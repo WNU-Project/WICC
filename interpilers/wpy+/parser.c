@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parser.h"
+#define _POSIX_C_SOURCE 200809L
 
 // Track includes
 static int has_pypstdio = 0;
@@ -24,21 +25,68 @@ ASTNode *parse(Token *tokens, int token_count) {
 
     // --- Handle includes ---
     while (i < token_count && tokens[i].type == TOKEN_INCLUDE) {
-        // Expect < identifier >
-        if (i+3 < token_count &&
-            tokens[i+1].type == TOKEN_LT &&
-            tokens[i+2].type == TOKEN_IDENTIFIER &&
-            tokens[i+3].type == TOKEN_GT) {
+        // Be permissive about how includes are emitted by the lexer.
+        // Possible shapes we accept:
+        // 1) TOKEN_INCLUDE with lexeme "pypstdio"
+        // 2) TOKEN_INCLUDE with lexeme "<pypstdio>" or '"pypstdio"'
+        // 3) TOKEN_INCLUDE followed by TOKEN_LT TOKEN_IDENTIFIER TOKEN_GT
+        // 4) TOKEN_INCLUDE followed by TOKEN_IDENTIFIER (no angle brackets)
+
+        int consumed = 0;
+
+        if (tokens[i].lexeme && tokens[i].lexeme[0] != '\0') {
+            // Normalize lexeme: trim surrounding <>, '"', or whitespace
+            const char *s = tokens[i].lexeme;
+            size_t len = strlen(s);
+            size_t start = 0, end = len;
+            // strip whitespace
+            while (start < end && isspace((unsigned char)s[start])) start++;
+            while (end > start && isspace((unsigned char)s[end-1])) end--;
+            // strip angle brackets or quotes
+            if (end - start >= 2 && s[start] == '<' && s[end-1] == '>') { start++; end--; }
+            else if (end - start >= 2 && (s[start] == '"' && s[end-1] == '"')) { start++; end--; }
+
+            char buf[128] = {0};
+            size_t copy_len = (end - start) < (sizeof(buf)-1) ? (end - start) : (sizeof(buf)-1);
+            memcpy(buf, s + start, copy_len);
+            buf[copy_len] = '\0';
+
+            if (strcmp(buf, "pypstdio") == 0) {
+                has_pypstdio = 1;
+            }
+            consumed = 1;
+            i += 1;
+
+        } else if (i+3 < token_count &&
+                   tokens[i+1].type == TOKEN_LT &&
+                   tokens[i+2].type == TOKEN_IDENTIFIER &&
+                   tokens[i+3].type == TOKEN_GT) {
 
             if (strcmp(tokens[i+2].lexeme, "pypstdio") == 0) {
                 has_pypstdio = 1;
             }
-
+            consumed = 4;
             i += 4; // skip past include <name>
+
+        } else if (i+1 < token_count && tokens[i+1].type == TOKEN_IDENTIFIER) {
+            // allow "#include pypstdio" without angle brackets
+            if (strcmp(tokens[i+1].lexeme, "pypstdio") == 0) {
+                has_pypstdio = 1;
+            }
+            consumed = 2;
+            i += 2;
+
         } else {
-            fprintf(stderr, "Parse error: malformed #include directive\n");
+            // Emit helpful diagnostic with surrounding tokens
+            fprintf(stderr, "Parse error: malformed #include directive at token %d\n", i);
+            fprintf(stderr, "Context tokens:\n");
+            for (int k = i; k < i+6 && k < token_count; k++) {
+                fprintf(stderr, "  [%d] type=%d lexeme='%s'\n", k, tokens[k].type, tokens[k].lexeme ? tokens[k].lexeme : "(null)");
+            }
             return NULL;
         }
+
+        // loop continues to handle multiple leading includes
     }
 
     // --- Expect func ---

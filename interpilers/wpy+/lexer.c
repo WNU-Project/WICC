@@ -12,6 +12,10 @@ static const char *source = NULL;
 static int position = 0;
 static int line = 1;
 
+// If we need to emit an extra token on the next call (e.g., include filename)
+static int have_pending = 0;
+static Token pending_token;
+
 // -----------------------------
 // Internal helpers
 // -----------------------------
@@ -48,6 +52,7 @@ static Token make_token(TokenType type, const char *lexeme) {
     token.line = line;
     return token;
 }
+
 // Keyword checker
 static int is_keyword(const char *lexeme, TokenType *out_type) {
     if (strcmp(lexeme, "func") == 0)    { *out_type = TOKEN_FUNC; return 1; }
@@ -91,12 +96,27 @@ void set_source(const char *src) {
     source = src;
     position = 0;
     line = 1;
+    have_pending = 0;
+
+    // Strip UTF-8 BOM if present
+    if (source &&
+        (unsigned char)source[0] == 0xEF &&
+        (unsigned char)source[1] == 0xBB &&
+        (unsigned char)source[2] == 0xBF) {
+        position = 3;
+    }
 }
 
 // -----------------------------
 // Tokenizer
 // -----------------------------
 Token next_token(void) {
+    // Emit pending token if present (used for #include filename)
+    if (have_pending) {
+        have_pending = 0;
+        return pending_token;
+    }
+
     // Skip whitespace
     while (!is_at_end() && isspace(peek())) {
         if (peek() == '\n') line++;
@@ -108,19 +128,18 @@ Token next_token(void) {
     char c = advance();
 
     // Identifiers / keywords
- if (isalpha(c) || c == '_') {
-    int start = position - 1;
-    while (isalnum(peek()) || peek() == '_') advance();
-    int length = position - start;
-    char *lexeme = strndup_local(source + start, length);
+    if (isalpha(c) || c == '_') {
+        int start = position - 1;
+        while (isalnum(peek()) || peek() == '_') advance();
+        int length = position - start;
+        char *lexeme = strndup_local(source + start, length);
 
-    TokenType type = TOKEN_IDENTIFIER;
-    if (is_keyword(lexeme, &type)) {
-        return make_token(type, lexeme);
+        TokenType type = TOKEN_IDENTIFIER;
+        if (is_keyword(lexeme, &type)) {
+            return make_token(type, lexeme);
+        }
+        return make_token(TOKEN_IDENTIFIER, lexeme);
     }
-    return make_token(TOKEN_IDENTIFIER, lexeme);
- }
-
 
     // Numbers
     if (isdigit(c)) {
@@ -144,32 +163,32 @@ Token next_token(void) {
         return make_token(TOKEN_STRING, lexeme);
     }
 
-// Preprocessor directives (#include <pypstdio>)
-if (c == '#') {
+    // Preprocessor directives
+    if (c == '#') {
     int start = position;
     while (isalpha(peek())) advance();
     int length = position - start;
     char *word = strndup_local(source + start, length);
 
-    if (strcmp(word, "include") == 0) {
+    if (word && strcmp(word, "include") == 0) {
+        while (isspace(peek())) advance();
         if (peek() == '<') {
-            advance();
+            advance(); // consume '<'
             int fname_start = position;
-            while (peek() != '>' && !is_at_end()) advance();
+            while (!is_at_end() && peek() != '>') advance();
             int fname_len = position - fname_start;
             char *fname = strndup_local(source + fname_start, fname_len);
-            if (peek() == '>') advance();
+            if (peek() == '>') advance(); // consume '>'
 
-            // Collapse into one token
-            return make_token(TOKEN_INCLUDE, fname);
+            // ✅ Return TOKEN_INCLUDE with lexeme "pypstdio"
+            return make_token(TOKEN_INCLUDE, fname ? fname : "");
         }
     }
 
-    // Skip unknown preprocessor directives
+    // Skip invalid directive
     while (!is_at_end() && peek() != '\n') advance();
     return next_token();
 }
-
 
 
 

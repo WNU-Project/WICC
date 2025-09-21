@@ -14,6 +14,7 @@ all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
+	rcedit-x64.exe $@ --set-icon wpy+.ico
 
 # Compile .c to .o
 %.o: %.c
