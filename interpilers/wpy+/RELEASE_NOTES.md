@@ -1,11 +1,11 @@
-# WPy+ Interpiler — Release Notes
+# wpy+ Interpiler — Release Notes
 
 **Version:** 1.0.0  
 **Date:** 2025-09-21
 
 ## Summary
 
-This release packages the WPy+ interpiler — a small interpiler for the Python+ language (a Python-like teaching language). The folder contains sources, build artifacts, distribution packages for Windows, and a sample program `hello.pyp`.
+This release packages the wpy+ interpiler — a small interpiler for the Python+ language (a Python-like teaching language). The folder contains sources, build artifacts, distribution packages for Windows, and a sample program `hello.pyp`.
 
 ## Contents
 
@@ -23,22 +23,6 @@ This release packages the WPy+ interpiler — a small interpiler for the Python+
   - `hello.pyp` — simple example used in CI runs
 
 ## Build Instructions
-
-### Unix (Linux / macOS)
-
-1. Ensure `gcc` and `make` are installed. On Debian/Ubuntu: `sudo apt-get install build-essential`.
-1. From the repo root or this folder, run:
-
-```sh
-cd interpilers/wpy+
-make
-```
-
-1. The build produces `wpy+` (or `wpy+.exe` depending on Makefile/OS). Run the sample:
-
-```sh
-./wpy+ hello.pyp
-```
 
 ### Windows (PowerShell)
 
@@ -84,3 +68,7 @@ cd interpilers\wpy+
 1. Build: `cd interpilers/wpy+ && make`
 2. Run: `./wpy+ hello.pyp` (or `./wpy+.exe hello.pyp` on Windows)
 3. Expected output: Runs the interpiler and executes `hello.pyp` sample. If there are parser/runtime errors, see the "Known Issues" section above for guidance.
+
+## Using a MSI File
+
+Install The MSI File that comes with the Release On GitHub follow the rules of the installer, after it's installed make a .pyp file, and then run the interpiler to run it.
