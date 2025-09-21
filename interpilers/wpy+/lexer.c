@@ -1,38 +1,70 @@
 #include <stdio.h>
 #include <stdlib.h>
+#define _POSIX_C_SOURCE 200809L
 #include <string.h>
 #include <ctype.h>
-#include "tokens.h"
+#include "lexer.h"
 
 // -----------------------------
-// Local helpers
+// Lexer state (private to lexer.c)
 // -----------------------------
+static const char *source = NULL;
+static int position = 0;
+static int line = 1;
 
-// Windows-safe replacement for strndup
+// -----------------------------
+// Internal helpers
+// -----------------------------
+static int is_at_end(void) {
+    return !source || source[position] == '\0';
+}
+
+static char peek(void) {
+    return is_at_end() ? '\0' : source[position];
+}
+
+static char peek_next(void) {
+    return (is_at_end() || source[position + 1] == '\0') ? '\0' : source[position + 1];
+}
+
+static char advance(void) {
+    return is_at_end() ? '\0' : source[position++];
+}
+
 static char *strndup_local(const char *s, size_t n) {
     size_t len = strlen(s);
     if (len > n) len = n;
-    char *result = (char *)malloc(len + 1);
+    char *result = malloc(len + 1);
     if (!result) return NULL;
     memcpy(result, s, len);
     result[len] = '\0';
     return result;
 }
 
-// -----------------------------
-// Lexer state
-// -----------------------------
-static const char *source = NULL;
-static int position = 0;
-static int line = 1;
+static Token make_token(TokenType type, const char *lexeme) {
+    Token token;
+    token.type = type;
+    token.lexeme = strndup_local(lexeme, strlen(lexeme));
+    token.line = line;
+    return token;
+}
+// Keyword checker
+static int is_keyword(const char *lexeme, TokenType *out_type) {
+    if (strcmp(lexeme, "func") == 0)    { *out_type = TOKEN_FUNC; return 1; }
+    if (strcmp(lexeme, "return") == 0)  { *out_type = TOKEN_RETURN; return 1; }
+    if (strcmp(lexeme, "let") == 0)     { *out_type = TOKEN_LET; return 1; }
+    if (strcmp(lexeme, "if") == 0)      { *out_type = TOKEN_IF; return 1; }
+    if (strcmp(lexeme, "else") == 0)    { *out_type = TOKEN_ELSE; return 1; }
+    if (strcmp(lexeme, "for") == 0)     { *out_type = TOKEN_FOR; return 1; }
+    if (strcmp(lexeme, "while") == 0)   { *out_type = TOKEN_WHILE; return 1; }
+    if (strcmp(lexeme, "use") == 0)     { *out_type = TOKEN_USE; return 1; }
+    if (strcmp(lexeme, "const") == 0)   { *out_type = TOKEN_CONST; return 1; }
+    if (strcmp(lexeme, "end") == 0)     { *out_type = TOKEN_END; return 1; }
+    return 0;
+}
 
-// Forward declarations
-Token next_token(void);
-static Token make_token(TokenType type, const char *lexeme);
-static int is_keyword(const char *lexeme, TokenType *out_type);
-
 // -----------------------------
-// File loader
+// Public API
 // -----------------------------
 char *load_file(const char *path) {
     FILE *fp = fopen(path, "rb");
@@ -55,9 +87,6 @@ char *load_file(const char *path) {
     return buffer;
 }
 
-// -----------------------------
-// Source initializer
-// -----------------------------
 void set_source(const char *src) {
     source = src;
     position = 0;
@@ -69,37 +98,34 @@ void set_source(const char *src) {
 // -----------------------------
 Token next_token(void) {
     // Skip whitespace
-    while (source && isspace(source[position])) {
-        if (source[position] == '\n') line++;
-        position++;
+    while (!is_at_end() && isspace(peek())) {
+        if (peek() == '\n') line++;
+        advance();
     }
 
-    if (!source || source[position] == '\0') {
-        return make_token(TOKEN_EOF, "EOF");
-    }
+    if (is_at_end()) return make_token(TOKEN_EOF, "EOF");
 
-    char c = source[position];
+    char c = advance();
 
     // Identifiers / keywords
-    if (isalpha(c) || c == '_') {
-        int start = position;
-        while (isalnum(source[position]) || source[position] == '_') {
-            position++;
-        }
-        int length = position - start;
-        char *lexeme = strndup_local(source + start, length);
+ if (isalpha(c) || c == '_') {
+    int start = position - 1;
+    while (isalnum(peek()) || peek() == '_') advance();
+    int length = position - start;
+    char *lexeme = strndup_local(source + start, length);
 
-        TokenType type = TOKEN_IDENTIFIER;
-        if (is_keyword(lexeme, &type)) {
-            return make_token(type, lexeme);
-        }
-        return make_token(TOKEN_IDENTIFIER, lexeme);
+    TokenType type = TOKEN_IDENTIFIER;
+    if (is_keyword(lexeme, &type)) {
+        return make_token(type, lexeme);
     }
+    return make_token(TOKEN_IDENTIFIER, lexeme);
+ }
+
 
     // Numbers
     if (isdigit(c)) {
-        int start = position;
-        while (isdigit(source[position])) position++;
+        int start = position - 1;
+        while (isdigit(peek())) advance();
         int length = position - start;
         char *lexeme = strndup_local(source + start, length);
         return make_token(TOKEN_NUMBER, lexeme);
@@ -107,93 +133,86 @@ Token next_token(void) {
 
     // Strings
     if (c == '"') {
-        position++; // skip opening quote
         int start = position;
-        while (source[position] != '"' && source[position] != '\0') {
-            if (source[position] == '\n') line++;
-            position++;
+        while (peek() != '"' && !is_at_end()) {
+            if (peek() == '\n') line++;
+            advance();
         }
         int length = position - start;
         char *lexeme = strndup_local(source + start, length);
-        if (source[position] == '"') position++; // skip closing quote
+        if (peek() == '"') advance(); // consume closing quote
         return make_token(TOKEN_STRING, lexeme);
     }
 
-    // Preprocessor / directives starting with '#'
-    if (c == '#') {
-     position++;
-     int start = position;
-     while (isalnum(source[position])) position++;
-     int length = position - start;
-     char *lexeme = strndup_local(source + start, length);
-     if (strcmp(lexeme, "include") == 0) {
-        return make_token(TOKEN_INCLUDE, lexeme);
-     }
-     return make_token(TOKEN_HASH, lexeme);
+// Preprocessor directives (#include <pypstdio>)
+if (c == '#') {
+    int start = position;
+    while (isalpha(peek())) advance();
+    int length = position - start;
+    char *word = strndup_local(source + start, length);
+
+    if (strcmp(word, "include") == 0) {
+        if (peek() == '<') {
+            advance();
+            int fname_start = position;
+            while (peek() != '>' && !is_at_end()) advance();
+            int fname_len = position - fname_start;
+            char *fname = strndup_local(source + fname_start, fname_len);
+            if (peek() == '>') advance();
+
+            // Collapse into one token
+            return make_token(TOKEN_INCLUDE, fname);
+        }
+    }
+
+    // Skip unknown preprocessor directives
+    while (!is_at_end() && peek() != '\n') advance();
+    return next_token();
+}
+
+
+
+
+    // Comments
+    if (c == '/') {
+        if (peek() == '/') {
+            while (peek() != '\n' && !is_at_end()) advance();
+            return next_token(); // skip comment
+        } else if (peek() == '*') {
+            advance(); // consume '*'
+            while (!(peek() == '*' && peek_next() == '/') && !is_at_end()) {
+                if (peek() == '\n') line++;
+                advance();
+            }
+            if (!is_at_end()) { advance(); advance(); } // consume */
+            return next_token(); // skip comment
+        }
+        return make_token(TOKEN_SLASH, "/");
     }
 
     // Single-character tokens
     switch (c) {
-        case '(': position++; return make_token(TOKEN_LPAREN, "(");
-        case ')': position++; return make_token(TOKEN_RPAREN, ")");
-        case '{': position++; return make_token(TOKEN_LBRACE, "{");
-        case '}': position++; return make_token(TOKEN_RBRACE, "}");
-        case ';': position++; return make_token(TOKEN_SEMICOLON, ";");
-        case '.': position++; return make_token(TOKEN_DOT, ".");
-        case '+': position++; return make_token(TOKEN_PLUS, "+");
-        case '-': position++; return make_token(TOKEN_MINUS, "-");
-        case '*': position++; return make_token(TOKEN_STAR, "*");
-        case '/': position++; return make_token(TOKEN_SLASH, "/");
-        case '<': position++; return make_token(TOKEN_LT, "<");
-        case '>': position++; return make_token(TOKEN_GT, ">");
-        case '#':
-            if (source[position+1] == 'i') {
-                position += 2;
-                return make_token(TOKEN_INCLUDE, "#include");
-            }
-            return make_token(TOKEN_HASH, "#");
+        case '(': return make_token(TOKEN_LPAREN, "(");
+        case ')': return make_token(TOKEN_RPAREN, ")");
+        case '{': return make_token(TOKEN_LBRACE, "{");
+        case '}': return make_token(TOKEN_RBRACE, "}");
+        case ';': return make_token(TOKEN_SEMICOLON, ";");
+        case '+': return make_token(TOKEN_PLUS, "+");
+        case '-': return make_token(TOKEN_MINUS, "-");
+        case '*': return make_token(TOKEN_STAR, "*");
+        case '<': return make_token(TOKEN_LT, "<");
+        case '>': return make_token(TOKEN_GT, ">");
         case '=':
-            if (source[position+1] == '=') {
-                position += 2;
-                return make_token(TOKEN_EQEQ, "==");
-            }
-            position++;
+            if (peek() == '=') { advance(); return make_token(TOKEN_EQEQ, "=="); }
             return make_token(TOKEN_EQUAL, "=");
         case '!':
-            if (source[position+1] == '=') {
-                position += 2;
-                return make_token(TOKEN_BANGEQ, "!=");
-            }
+            if (peek() == '=') { advance(); return make_token(TOKEN_BANGEQ, "!="); }
             break;
+        case '.': return make_token(TOKEN_DOT, ".");
+        case ',': return make_token(TOKEN_COMMA, ",");
     }
 
     // Unknown character
     fprintf(stderr, "Unexpected character '%c' at line %d\n", c, line);
-    position++;
     return make_token(TOKEN_IDENTIFIER, "?");
-}
-
-// -----------------------------
-// Helpers
-// -----------------------------
-static Token make_token(TokenType type, const char *lexeme) {
-    Token token;
-    token.type = type;
-    token.lexeme = strdup(lexeme);
-    token.line = line;
-    return token;
-}
-
-static int is_keyword(const char *lexeme, TokenType *out_type) {
-    if (strcmp(lexeme, "func") == 0) { *out_type = TOKEN_FUNC; return 1; }
-    if (strcmp(lexeme, "return") == 0) { *out_type = TOKEN_RETURN; return 1; }
-    if (strcmp(lexeme, "let") == 0) { *out_type = TOKEN_LET; return 1; }
-    if (strcmp(lexeme, "if") == 0) { *out_type = TOKEN_IF; return 1; }
-    if (strcmp(lexeme, "else") == 0) { *out_type = TOKEN_ELSE; return 1; }
-    if (strcmp(lexeme, "for") == 0) { *out_type = TOKEN_FOR; return 1; }
-    if (strcmp(lexeme, "while") == 0) { *out_type = TOKEN_WHILE; return 1; }
-    if (strcmp(lexeme, "use") == 0) { *out_type = TOKEN_USE; return 1; }
-    if (strcmp(lexeme, "const") == 0) { *out_type = TOKEN_CONST; return 1; }
-    if (strcmp(lexeme, "end") == 0) { *out_type = TOKEN_END; return 1; }
-    return 0;
 }
