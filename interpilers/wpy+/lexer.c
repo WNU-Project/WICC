@@ -235,3 +235,14 @@ Token next_token(void) {
     fprintf(stderr, "Unexpected character '%c' at line %d\n", c, line);
     return make_token(TOKEN_IDENTIFIER, "?");
 }
+
+int lex_line(const char *line, Token *tokens) {
+    set_source(line);
+    int count = 0;
+    Token tok;
+    do {
+        tok = next_token();
+        tokens[count++] = tok;
+    } while (tok.type != TOKEN_EOF && count < 256);
+    return count;
+}

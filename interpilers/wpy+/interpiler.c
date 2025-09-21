@@ -41,3 +41,12 @@ void run_program(ASTNode *root) {
         fprintf(stderr, "Top-level AST is not a function.\n");
     }
 }
+
+void interpret(ASTNode *root) {
+    if (!root) {
+        printf("Nothing to interpret.\n");
+        return;
+    }
+    printf("Interpret called on AST.\n");
+    // TODO: walk the AST and execute
+}

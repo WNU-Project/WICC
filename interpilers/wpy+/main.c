@@ -5,12 +5,17 @@
 #include "parser.h"
 #include "interpiler.h"
 #include "lexer.h"
+#include "REPL.h"
 
 int main(int argc, char *argv[]) {
-    // Check for arguments
+    // No arguments at all
     if (argc < 2) {
         printf("wpy+.exe: \033[1;31mfatal error:\033[0m no arguments provided \033[1;31mError Code: 1\033[0m\n");
         printf("Usage: wpy+.exe <source_file.pyp> [options]\n");
+        printf("Options:\n");
+        printf("  --help, -h    Show this help message\n");
+        printf("  --version, -v Show version information\n");
+        printf("  --REPL, -R    Start interactive REPL mode\n");
         return 1;
     }
 
@@ -22,6 +27,7 @@ int main(int argc, char *argv[]) {
         printf("Options:\n");
         printf("  --help, -h    Show this help message\n");
         printf("  --version, -v Show version information\n");
+        printf("  --REPL, -R    Start interactive REPL mode\n");
         return 0;
     }
 
@@ -34,6 +40,13 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
+    if (strcmp(argv[1], "--REPL") == 0 || strcmp(argv[1], "-R") == 0) {
+        printf("Tip/Caution: This argument DOES not work in MS PowerShell.\n");
+        fflush(stdout);
+        run_repl();
+        return 0;
+    }
+
     // Otherwise, treat argv[1] as a filename
     const char *input_path = argv[1];
     char *source = load_file(input_path);
@@ -43,8 +56,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize lexer with source buffer
-    set_source(source);   // just call it, don’t re‑implement it
-
+    set_source(source);
 
     // 1. Lexing + debug
     printf("Lexing...\n");
@@ -53,7 +65,7 @@ int main(int argc, char *argv[]) {
     Token tok;
     do {
         tok = next_token();
-        printf("Token: %d (%s)\n", tok.type, tok.lexeme ? tok.lexeme : ""); // debug
+        printf("Token: %d (%s)\n", tok.type, tok.lexeme ? tok.lexeme : "");
         tokens[token_count++] = tok;
     } while (tok.type != TOKEN_EOF);
 
@@ -64,7 +76,7 @@ int main(int argc, char *argv[]) {
         printf("Parser returned NULL — nothing to run.\n");
     } else {
         printf("AST built successfully:\n");
-        print_ast(ast, 0);   // dump the AST tree
+        print_ast(ast, 0);
         run_program(ast);
         free_ast(ast);
     }

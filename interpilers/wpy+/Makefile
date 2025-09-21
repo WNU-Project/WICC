@@ -6,7 +6,7 @@ CFLAGS = -Wall -Wextra -std=c11
 TARGET = wpy+.exe
 
 # Source files
-SRCS = main.c lexer.c parser.c interpiler.c
+SRCS = main.c lexer.c parser.c interpiler.c REPL.c
 OBJS = $(SRCS:.c=.o)
 
 # Default build
@@ -14,7 +14,6 @@ all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
-	rcedit-x64.exe $@ --set-icon wpy+.ico
 
 # Compile .c to .o
 %.o: %.c

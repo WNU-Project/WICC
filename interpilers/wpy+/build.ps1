@@ -27,3 +27,7 @@ Write-Host "Running help command..." -ForegroundColor DarkGreen
 # Run the version command
 Write-Host "Running version command..." -ForegroundColor DarkGreen
 .\wpy+.exe --version
+
+# Run the REPL command
+Write-Host "Running REPL command..." -ForegroundColor DarkGreen
+.\wpy+.exe -R
