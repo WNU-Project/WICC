@@ -1,0 +1,10 @@
+{
+    "name": "python+-language-support",
+    "displayName": "Python+ Language Support",
+    "description": "Provides language support for Python+ files, including syntax highlighting, code completion, and linting.",
+    "version": "1.0.0",
+    "publisher": "WNU Project",
+    "engines": {
+        "vscode": ">=1.85.0"
+    }
+}

@@ -33,11 +33,13 @@ typedef enum {
     TOKEN_INCLUDE,       // #include <...>
 
     // Namespaces / Sub-preprocessor directives
-    TOKEN_VARIABLE,      // .variable
-    TOKEN_TYPE_INT,      // int
-    TOKEN_TYPE_STRING,   // string
-    TOKEN_TYPE_FLOAT,    // float
-    TOKEN_TYPE_BOOL,     // bool
+    TOKEN_VARIABLE,           // .variable
+    TOKEN_TYPE_INT,           // int
+    TOKEN_TYPE_CHAR,          // char
+    TOKEN_CHAR_LITERAL,   // e.g. char.int(char1, 'A')
+    TOKEN_TYPE_CHAR_STRING,   // string
+    TOKEN_TYPE_FLOAT,         // float
+    TOKEN_TYPE_BOOL,          // bool
 
     // Delimiters
     TOKEN_LPAREN,        // (

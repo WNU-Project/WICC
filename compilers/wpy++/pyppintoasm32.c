@@ -3,32 +3,25 @@
 #include <stdlib.h>
 #include "parser.h"
 
-// -------- Codegen context --------
 typedef struct {
-    int str_index;   // running index for string labels
+    int str_index;
 } CodegenCtx;
 
-// Forward declarations
 static void gen_node(ASTNode *node, FILE *out, CodegenCtx *ctx);
 static void emit_data_section(ASTNode *ast, FILE *out);
-static void emit_text_section_header(FILE *out);
+static void emit_text_header(FILE *out);
 
-// -------- Public API: always write to "out.asm" --------
-int generate_asm_to_file(ASTNode *ast) {
-    const char *out_path = "out.asm";
+int generate_asm32(ASTNode *ast) {
+    const char *out_path = "out32.asm";
     FILE *out = fopen(out_path, "w");
     if (!out) {
-        perror("generate_asm_to_file: fopen");
+        perror("fopen out32.asm");
         return 1;
     }
 
-    // 1) Data section
     emit_data_section(ast, out);
+    emit_text_header(out);
 
-    // 2) Text section
-    emit_text_section_header(out);
-
-    // 3) Walk AST
     CodegenCtx ctx = {0};
     for (int i = 0; i < ast->child_count; i++) {
         gen_node(ast->children[i], out, &ctx);
@@ -39,7 +32,6 @@ int generate_asm_to_file(ASTNode *ast) {
     return 0;
 }
 
-// -------- Helpers --------
 static void emit_data_section(ASTNode *ast, FILE *out) {
     fprintf(out, "section .data\n");
 
@@ -53,7 +45,6 @@ static void emit_data_section(ASTNode *ast, FILE *out) {
                 if (stmt && stmt->type == AST_PRINT && stmt->child_count > 0) {
                     ASTNode *lit = stmt->children[0];
                     if (lit && lit->type == AST_LITERAL && lit->value) {
-                        // Null-terminated string for printf
                         fprintf(out, "str%d db %s, 0\n", strCount, lit->value);
                         strCount++;
                     }
@@ -64,14 +55,13 @@ static void emit_data_section(ASTNode *ast, FILE *out) {
     fprintf(out, "\n");
 }
 
-static void emit_text_section_header(FILE *out) {
+static void emit_text_header(FILE *out) {
     fprintf(out, "section .text\n");
     fprintf(out, "extern printf\n");
     fprintf(out, "extern exit\n");
     fprintf(out, "global main\n\n");
 }
 
-// -------- Code emission --------
 static void gen_node(ASTNode *node, FILE *out, CodegenCtx *ctx) {
     if (!node) return;
 
@@ -92,11 +82,9 @@ static void gen_node(ASTNode *node, FILE *out, CodegenCtx *ctx) {
             break;
 
         case AST_PRINT:
-            // Windows x64 ABI: RCX = first arg
-            fprintf(out, "    sub rsp, 40              ; shadow space\n");
-            fprintf(out, "    lea rcx, [rel str%d]     ; RCX = &string\n", ctx->str_index);
+            fprintf(out, "    push str%d\n", ctx->str_index);
             fprintf(out, "    call printf\n");
-            fprintf(out, "    add rsp, 40\n");
+            fprintf(out, "    add esp, 4\n");
             ctx->str_index++;
             break;
 
@@ -105,13 +93,12 @@ static void gen_node(ASTNode *node, FILE *out, CodegenCtx *ctx) {
             if (node->child_count > 0 && node->children[0] && node->children[0]->value) {
                 imm = node->children[0]->value;
             }
-            fprintf(out, "    mov ecx, %s              ; exit code\n", imm);
+            fprintf(out, "    push %s\n", imm);
             fprintf(out, "    call exit\n");
             break;
         }
 
         default:
-            // Ignore other nodes for now
             break;
     }
 }

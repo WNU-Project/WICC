@@ -30,6 +30,15 @@ static char advance(void) {
     return is_at_end() ? '\0' : source[position++];
 }
 
+static char *strdup_local(const char *s) {
+    size_t n = strlen(s);
+    char *result = malloc(n+1);
+    if (!result) return NULL;
+    memcpy(result, s, n);
+    result[n] = '\0';
+    return result;
+}
+
 static char *strndup_local(const char *s, size_t n) {
     char *result = malloc(n+1);
     if (!result) return NULL;
@@ -41,7 +50,7 @@ static char *strndup_local(const char *s, size_t n) {
 static Token make_token(TokenType type, const char *lexeme) {
     Token t;
     t.type = type;
-    t.lexeme = strndup_local(lexeme, strlen(lexeme));
+    t.lexeme = strdup_local(lexeme);
     t.line = line;
     return t;
 }
@@ -106,12 +115,12 @@ Token next_token(void) {
         return make_token(TOKEN_SLASH, "/");
     }
 
-    // Identifiers / keywords
+    // Identifiers / keywords / types
     if (isalpha(c) || c == '_') {
-        int start = position-1;
+        int start = position - 1;
         while (isalnum(peek()) || peek() == '_') advance();
         int len = position - start;
-        char *lex = strndup_local(source+start, len);
+        char *lex = strndup_local(source + start, len);
 
         // keywords
         if (strcmp(lex,"func")==0) return make_token(TOKEN_FUNC,lex);
@@ -123,15 +132,22 @@ Token next_token(void) {
         if (strcmp(lex,"use")==0) return make_token(TOKEN_USE,lex);
         if (strcmp(lex,"end")==0) return make_token(TOKEN_END,lex);
 
+        // types
+        if (strcmp(lex,"int")==0) return make_token(TOKEN_TYPE_INT,lex);
+        if (strcmp(lex,"char")==0) return make_token(TOKEN_TYPE_CHAR,lex);
+        if (strcmp(lex,"string")==0) return make_token(TOKEN_TYPE_CHAR_STRING,lex);
+        if (strcmp(lex,"float")==0) return make_token(TOKEN_TYPE_FLOAT,lex);
+        if (strcmp(lex,"bool")==0) return make_token(TOKEN_TYPE_BOOL,lex);
+
         return make_token(TOKEN_IDENTIFIER, lex);
     }
 
     // Numbers
     if (isdigit(c)) {
-        int start = position-1;
+        int start = position - 1;
         while (isdigit(peek())) advance();
         int len = position - start;
-        char *lex = strndup_local(source+start, len);
+        char *lex = strndup_local(source + start, len);
         return make_token(TOKEN_NUMBER, lex);
     }
 
@@ -143,14 +159,21 @@ Token next_token(void) {
             advance();
         }
         int len = position - start;
-        char *lex = strndup_local(source+start, len);
+        char *lex = strndup_local(source + start, len);
         if (peek() == '"') advance();
         return make_token(TOKEN_STRING, lex);
     }
 
+    // Character literal
+    if (c == '\'') {
+        char ch = advance();
+        char buf[2] = { ch, '\0' };
+        if (peek() == '\'') advance(); // consume closing '
+        return make_token(TOKEN_CHAR_LITERAL, buf);
+    }
+
     // Preprocessor directives
     if (c == '#') {
-        // Case 1: #include <...>
         int start = position;
         while (isalpha(peek())) advance();
         int len = position - start;
@@ -159,32 +182,29 @@ Token next_token(void) {
         if (word && strcmp(word, "include") == 0) {
             while (isspace(peek())) advance();
             if (peek() == '<') {
-                advance(); // consume '<'
+                advance();
                 int fname_start = position;
                 while (!is_at_end() && peek() != '>') advance();
                 int fname_len = position - fname_start;
                 char *fname = strndup_local(source + fname_start, fname_len);
-                if (peek() == '>') advance(); // consume '>'
+                if (peek() == '>') advance();
                 return make_token(TOKEN_INCLUDE, fname ? fname : "");
             }
         }
 
-        // Case 2: shorthand #<...>
         if (peek() == '<') {
-            advance(); // consume '<'
+            advance();
             int fname_start = position;
             while (!is_at_end() && peek() != '>') advance();
             int fname_len = position - fname_start;
             char *fname = strndup_local(source + fname_start, fname_len);
-            if (peek() == '>') advance(); // consume '>'
+            if (peek() == '>') advance();
             return make_token(TOKEN_INCLUDE, fname ? fname : "");
         }
 
-        // Unknown directive → skip to end of line
         while (!is_at_end() && peek() != '\n') advance();
         return next_token();
     }
-
 
     // Single-character tokens
     switch (c) {
@@ -209,13 +229,13 @@ Token next_token(void) {
     }
 
     // Unknown
-    fprintf(stderr,"Unexpected char '%c' at line %d\n",c,line);
-    return make_token(TOKEN_IDENTIFIER,"?");
+    fprintf(stderr,"Unexpected char '%c' at line %d\n", c, line);
+    return make_token(TOKEN_IDENTIFIER, "?");
 }
 
 int lex_line(const char *line, Token *tokens) {
     set_source(line);
-    int count=0;
+    int count = 0;
     Token tok;
     do {
         tok = next_token();

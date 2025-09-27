@@ -1,0 +1,6 @@
+#include <pyppstdio>
+
+void main() {
+    pyppstdio.print("Hello, world!");
+    return 0;
+}

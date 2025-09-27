@@ -5,7 +5,7 @@
 #include "interpiler.h"
 
 void run_repl(void) {
-    printf("Python+ 1.0.1 (WNU build, %s %s) [WICC interpiler 64-bit] on win32\n", __DATE__, __TIME__);
+    printf("Python+ 1.0.2 (WNU build, %s %s) [WICC interpiler 64-bit] on win32\n", __DATE__, __TIME__);
     printf("Type \"help\", \"manifesto\", or \"license\" for more information.\n");
 
     char line[1024];
