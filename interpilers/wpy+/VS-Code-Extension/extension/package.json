@@ -1,10 +1,25 @@
 {
-    "name": "python+-language-support",
+    "name": "python-plus-language-support",
     "displayName": "Python+ Language Support",
-    "description": "Provides language support for Python+ files, including syntax highlighting, code completion, and linting.",
+    "description": "Provides lightweight language support for Python+ files: completions and hovers.",
     "version": "1.0.0",
-    "publisher": "WNU Project",
+    "publisher": "WNU-Project",
     "engines": {
         "vscode": ">=1.85.0"
+    },
+    "main": "./extension/extension.js",
+    "activationEvents": [
+        "onLanguage:python+"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "python+",
+                "aliases": ["Python+", "python+"],
+                "extensions": [".pyp"],
+                "configuration": "./extension/language-configuration.json"
+            }
+        ],
+        "configuration": {}
     }
 }

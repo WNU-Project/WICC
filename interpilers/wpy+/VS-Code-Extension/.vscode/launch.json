@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/interpilers/wpy+/VS-Code-Extension"],
+      "outFiles": ["${workspaceFolder}/interpilers/wpy+/VS-Code-Extension/extension/*.js"]
+    }
+  ]
+}
