@@ -77,6 +77,7 @@ int generate_asm_to_file(ASTNode *ast, const char *out_path);
 
 int main(int argc, char *argv[]) {
     int is_win32_mode = 0;
+    int attempt_32 = 1; // whether to try producing a 32-bit build
     const char *filepath = NULL;
 
     if (argc < 2) {
@@ -95,6 +96,8 @@ int main(int argc, char *argv[]) {
             return 0;
         } else if (strcmp(argv[i], "--win32") == 0) {
             is_win32_mode = 1;
+        } else if (strcmp(argv[i], "--no32") == 0) {
+            attempt_32 = 0;
         } else {
             filepath = argv[i];
         }
@@ -200,17 +203,21 @@ int main(int argc, char *argv[]) {
         }
         printf("Executable created: out.exe\n");
 
-        // Optional: attempt 32-bit (your machine may fail — ignore errors)
-        if (generate_asm32(ast) == 0) {
-            printf("32-bit Assembly written to out32.asm\n");
-            if (assemble_to_object32("out32.asm", "out32.o") == 0) {
-                printf("32-bit Object file created: out32.o\n");
-                if (object_to_exe32("out32.o", "out32.exe") == 0) {
-                    printf("32-bit Executable created: out32.exe\n");
-                } else {
-                    fprintf(stderr, "Linking failed for 32-bit build (expected on some setups)\n");
+        // Optional: attempt 32-bit (your machine may fail — skip if --no32 given)
+        if (attempt_32) {
+            if (generate_asm32(ast) == 0) {
+                printf("32-bit Assembly written to out32.asm\n");
+                if (assemble_to_object32("out32.asm", "out32.o") == 0) {
+                    printf("32-bit Object file created: out32.o\n");
+                    if (object_to_exe32("out32.o", "out32.exe") == 0) {
+                        printf("32-bit Executable created: out32.exe\n");
+                    } else {
+                        fprintf(stderr, "Linking failed for 32-bit build (expected on some setups)\n");
+                    }
                 }
             }
+        } else {
+            printf("Skipping optional 32-bit build (use --no32 to suppress this message)\n");
         }
     }
 
