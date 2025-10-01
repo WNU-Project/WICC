@@ -1,0 +1,9 @@
+#include <graphics>
+
+void main() {
+    graphics.Init("Hello GDI", 800, 600);
+    graphics.Clear("white");
+    graphics.DrawText(100, 120, "Hello, Python++!");
+    graphics.DrawRect(90, 110, 240, 40);
+    graphics.Loop();
+}

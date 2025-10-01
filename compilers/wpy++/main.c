@@ -9,20 +9,16 @@
 #include "pyppintoasm32.h"
 #include "asmintoobject32.h"
 #include "objectintoexe32.h"
-
-// Forward declarations from lexer.c
-void init_lexer(const char *source);
-Token next_token(void);
-void free_token(Token *tok);
-
-// Forward declaration from codegen.c
-int generate_asm_to_file(ASTNode *ast, const char *out_path);
+#include "gra_pyppintoasm.h"
+#include "gra_asmintoobject.h"
+#include "gra_objectintoexe.h"
 
 static void show_help() {
     printf("Usage: wpy++.exe <source_file.pypp> [options]\n");
     printf("Options:\n");
     printf("  --help, -h       Show this help message\n");
     printf("  --version, -v    Show version information\n");
+    printf("  --win32          Build as Win32 GDI app (graphics pipeline)\n");
 }
 
 static void show_version() {
@@ -33,7 +29,6 @@ static void show_version() {
     printf("There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
-// Map token types to readable names
 static const char* token_type_name(TokenType t) {
     switch (t) {
         case TOKEN_IDENTIFIER:     return "IDENTIFIER";
@@ -72,66 +67,76 @@ static const char* token_type_name(TokenType t) {
     }
 }
 
+// Forward declarations from lexer.c
+void init_lexer(const char *source);
+Token next_token(void);
+void free_token(Token *tok);
+
+// Forward declaration from codegen.c (console)
+int generate_asm_to_file(ASTNode *ast, const char *out_path);
+
 int main(int argc, char *argv[]) {
+    int is_win32_mode = 0;
+    const char *filepath = NULL;
+
     if (argc < 2) {
         fprintf(stderr, "wpy++.exe: \033[1;31mfatal error:\033[0m no arguments provided\n");
         show_help();
         return 1;
     }
 
-    // Handle known flags
-    if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-        show_help();
-        return 0;
-    }
-    if (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0) {
-        show_version();
-        return 0;
+    // Parse args: first non-flag is the source file; flags can appear anywhere
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            show_help();
+            return 0;
+        } else if (strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-v") == 0) {
+            show_version();
+            return 0;
+        } else if (strcmp(argv[i], "--win32") == 0) {
+            is_win32_mode = 1;
+        } else {
+            filepath = argv[i];
+        }
     }
 
-    // Otherwise, treat argv[1] as a source file path
-    const char *filepath = argv[1];
+    if (!filepath) {
+        fprintf(stderr, "wpy++.exe: \033[1;31mfatal error:\033[0m no source file provided\n");
+        return 1;
+    }
+
+    // Read file
     FILE *fp = fopen(filepath, "rb");
     if (!fp) {
         fprintf(stderr, "wpy++.exe: \033[1;31mfatal error:\033[0m cannot open file '%s'\n", filepath);
         return 1;
     }
-
-    // Read file into memory
     fseek(fp, 0, SEEK_END);
     long size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
     char *buffer = (char*)malloc(size + 1);
-    if (!buffer) {
-        fprintf(stderr, "Memory allocation failed\n");
-        fclose(fp);
-        return 1;
-    }
+    if (!buffer) { fclose(fp); fprintf(stderr, "Memory allocation failed\n"); return 1; }
     fread(buffer, 1, size, fp);
     buffer[size] = '\0';
     fclose(fp);
 
-    // Run lexer
+    // Lex
     init_lexer(buffer);
-
-    // Collect tokens into an array
-    int capacity = 64;
-    int count = 0;
-    Token *tokens = malloc(sizeof(Token) * capacity);
-
+    int capacity = 64, count = 0;
+    Token *tokens = (Token*)malloc(sizeof(Token) * capacity);
     Token tok;
     do {
         tok = next_token();
         if (count >= capacity) {
             capacity *= 2;
-            tokens = realloc(tokens, sizeof(Token) * capacity);
+            tokens = (Token*)realloc(tokens, sizeof(Token) * capacity);
         }
         tokens[count++] = tok;
     } while (tok.type != TOKEN_EOF);
 
     printf("Lexing complete. %d tokens.\n", count);
 
-    // --- Token dump ---
+    // Dump tokens (optional)
     printf("Token dump:\n");
     for (int i = 0; i < count; i++) {
         printf("  [%2d] %-15s Lexeme='%s' (line %d, col %d)\n",
@@ -139,51 +144,80 @@ int main(int argc, char *argv[]) {
                tokens[i].lexeme, tokens[i].line, tokens[i].column);
     }
 
-    // Parse tokens into AST
+    // Parse
     ASTNode *ast = parse(tokens, count);
     printf("Parsing complete. AST:\n");
     print_ast(ast, 0);
 
-    // Generate assembly file
-    char outpath[512];
-    snprintf(outpath, sizeof(outpath), "%s.asm", filepath);
-    if (generate_asm_to_file(ast, outpath) == 0) {
-        printf("Assembly written to out.asm\n");
-    } else {
-        fprintf(stderr, "wpy++.exe: \033[1;31mfatal error:\033[0m failed to generate assembly\n");
-    }
+    int status = 0;
 
-    if (assemble_to_object("out.asm", "out.o") == 0) {
-        printf("Object file created: out.o\n");
-    }
-
-    if (assemble_to_object("out.asm", "out.o") == 0) {
-        if (object_to_exe("out.o", "out.exe") == 0) {
-            printf("Executable created: out.exe\n");
+    if (is_win32_mode) {
+        // Graphics pipeline (Win32 GDI)
+        if (gra_generate_asm_to_file(ast) != 0) {
+            fprintf(stderr, "wpy++.exe: \033[1;31mfatal error:\033[0m failed to generate graphics assembly\n");
+            status = 1;
+            goto cleanup;
         }
-    }
-    if (generate_asm32(ast) == 0) {
+        printf("Assembly written to outgra.asm (Win32 GDI)\n");
+
+        // IMPORTANT: use .obj for NASM COFF64 on Windows
+        if (gra_asm_to_object("outgra.asm", "outgra.obj", 0) != 0) {
+            fprintf(stderr, "wpy++.exe: \033[1;31mfatal error:\033[0m failed to assemble graphics object\n");
+            status = 1;
+            goto cleanup;
+        }
+        printf("Object file created: outgra.obj\n");
+
+        if (gra_object_to_exe("outgra.obj", "outgra.exe", 0) != 0) {
+            fprintf(stderr, "wpy++.exe: \033[1;31mfatal error:\033[0m failed to link graphics executable\n");
+            status = 1;
+            goto cleanup;
+        }
+        printf("Executable created: outgra.exe\n");
+    } else {
+        // Console pipeline
+        char outpath[512];
+        snprintf(outpath, sizeof(outpath), "%s.asm", filepath);
+
+        if (generate_asm_to_file(ast, "out.asm") != 0) {
+            fprintf(stderr, "wpy++.exe: \033[1;31mfatal error:\033[0m failed to generate assembly\n");
+            status = 1;
+            goto cleanup;
+        }
+        printf("Assembly written to out.asm\n");
+
+        if (assemble_to_object("out.asm", "out.o") != 0) {
+            fprintf(stderr, "wpy++.exe: \033[1;31mfatal error:\033[0m failed to assemble object\n");
+            status = 1;
+            goto cleanup;
+        }
+        printf("Object file created: out.o\n");
+
+        if (object_to_exe("out.o", "out.exe") != 0) {
+            fprintf(stderr, "wpy++.exe: \033[1;31mfatal error:\033[0m failed to link executable\n");
+            status = 1;
+            goto cleanup;
+        }
+        printf("Executable created: out.exe\n");
+
+        // Optional: attempt 32-bit (your machine may fail — ignore errors)
+        if (generate_asm32(ast) == 0) {
             printf("32-bit Assembly written to out32.asm\n");
             if (assemble_to_object32("out32.asm", "out32.o") == 0) {
                 printf("32-bit Object file created: out32.o\n");
                 if (object_to_exe32("out32.o", "out32.exe") == 0) {
                     printf("32-bit Executable created: out32.exe\n");
+                } else {
+                    fprintf(stderr, "Linking failed for 32-bit build (expected on some setups)\n");
                 }
-            } else {
-                fprintf(stderr, "wpy++.exe: \033[1;31mfatal error:\033[0m failed to assemble 32-bit object\n");
             }
-
-        } else {
-            fprintf(stderr, "wpy++.exe: \033[1;31mfatal error:\033[0m failed to generate 32-bit assembly\n");
         }
-
-    // Cleanup
-    for (int i = 0; i < count; i++) {
-        free_token(&tokens[i]);
     }
+
+cleanup:
+    for (int i = 0; i < count; i++) free_token(&tokens[i]);
     free(tokens);
     free(buffer);
     free_ast(ast);
-
-    return 0;
+    return status;
 }

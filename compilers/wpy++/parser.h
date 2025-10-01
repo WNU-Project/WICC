@@ -11,7 +11,8 @@ typedef enum {
     AST_PRINT,
     AST_RETURN,
     AST_LITERAL,
-    AST_IDENTIFIER
+    AST_IDENTIFIER,
+    AST_CALL,
 } ASTNodeType;
 
 typedef struct ASTNode {

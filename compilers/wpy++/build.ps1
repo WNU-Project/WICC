@@ -27,3 +27,7 @@ Write-Host "Running help command..." -ForegroundColor DarkGreen
 # Run the version command
 Write-Host "Running version command..." -ForegroundColor DarkGreen
 .\wpy++.exe --version
+
+# Run the win32 command
+Write-Host "Running win32 command..." -ForegroundColor DarkGreen
+.\wpy++.exe graphics.pypp --win32
