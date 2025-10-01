@@ -19,6 +19,7 @@ static void show_help() {
     printf("  --help, -h       Show this help message\n");
     printf("  --version, -v    Show version information\n");
     printf("  --win32          Build as Win32 GDI app (graphics pipeline) PLEASE REMEMBER THIS IS A WIP (WORK IN PROGRESS)\n");
+    printf("  --no32           Skip 32-bit build (only produce 64-bit executable)\n");
 }
 
 static void show_version() {
