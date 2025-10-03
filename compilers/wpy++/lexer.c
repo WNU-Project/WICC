@@ -107,13 +107,45 @@ Token next_token(void) {
         return make_token(TOKEN_INT_LITERAL, start, (src+pos)-start);
     }
 
-    // string literal
-    if (c == '"') {
-        advance(); // opening "
-        while (peek() != '"' && peek() != '\0') advance();
-        if (peek() == '"') advance(); // closing "
-        return make_token(TOKEN_STRING_LITERAL, start, (src+pos)-start);
+ // string literal with escape handling
+ if (c == '"') {
+    advance(); // skip opening "
+    char buffer[1024]; // adjust size or malloc dynamically
+    int w = 0;
+
+    while (peek() != '"' && peek() != '\0') {
+        char ch = advance();
+        if (ch == '\\') {
+            char e = advance();
+            switch (e) {
+                case 'n': buffer[w++] = '\n'; break;
+                case 't': buffer[w++] = '\t'; break;
+                case '\\': buffer[w++] = '\\'; break;
+                case '"': buffer[w++] = '"'; break;
+                case '\'': buffer[w++] = '\''; break;
+                default:
+                    // Unknown escape: keep literally
+                    buffer[w++] = '\\';
+                    buffer[w++] = e;
+                    break;
+            }
+        } else {
+            buffer[w++] = ch;
+        }
     }
+
+    if (peek() == '"') advance(); // closing "
+
+    buffer[w] = '\0';
+
+    Token t;
+    t.type = TOKEN_STRING_LITERAL;
+    t.lexeme = strdup(buffer);   // store the cooked string
+    t.line = line;
+    t.column = col - w;
+    return t;
+ }
+
 
     // char literal
     if (c == '\'') {

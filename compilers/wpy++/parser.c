@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parser.h"
-
+// --- internal state ---
 static Token *tokens;
 static int pos;
 static int count;
@@ -23,12 +23,14 @@ static int match(TokenType type) {
     return 0;
 }
 
+// --- AST helpers ---
 static ASTNode *make_node(ASTNodeType type, const char *value) {
     ASTNode *n = malloc(sizeof(ASTNode));
     n->type = type;
     n->value = value ? my_strdup(value) : NULL;
     n->children = NULL;
     n->child_count = 0;
+    n->lit_kind = LIT_INT; // default, override for literals
     return n;
 }
 
@@ -43,8 +45,21 @@ static void add_child(ASTNode *parent, ASTNode *child) {
 static ASTNode *parse_literal_or_identifier() {
     Token *t = advance();
     if (!t) return NULL;
-    if (t->type == TOKEN_STRING_LITERAL || t->type == TOKEN_INT_LITERAL || t->type == TOKEN_CHAR_LITERAL) {
-        return make_node(AST_LITERAL, t->lexeme);
+
+    if (t->type == TOKEN_STRING_LITERAL) {
+        ASTNode *n = make_node(AST_LITERAL, t->lexeme);
+        n->lit_kind = LIT_STRING;
+        return n;
+    }
+    if (t->type == TOKEN_CHAR_LITERAL) {
+        ASTNode *n = make_node(AST_LITERAL, t->lexeme);
+        n->lit_kind = LIT_CHAR;
+        return n;
+    }
+    if (t->type == TOKEN_INT_LITERAL) {
+        ASTNode *n = make_node(AST_LITERAL, t->lexeme);
+        n->lit_kind = LIT_INT;
+        return n;
     }
     if (t->type == TOKEN_IDENTIFIER) {
         return make_node(AST_IDENTIFIER, t->lexeme);
@@ -103,6 +118,7 @@ static ASTNode *parse_return() {
     if (peek()) {
         if (peek()->type == TOKEN_SUCCESS || peek()->type == TOKEN_FAILURE || peek()->type == TOKEN_INT_LITERAL) {
             ASTNode *val = make_node(AST_LITERAL, peek()->lexeme);
+            val->lit_kind = (peek()->type == TOKEN_INT_LITERAL) ? LIT_INT : LIT_STRING;
             add_child(ret, val);
             advance();
         }
@@ -121,7 +137,7 @@ static ASTNode *parse_statement() {
     if (c) return c;
     pos = save;
 
-    advance();
+    advance(); // skip unknown
     return NULL;
 }
 
@@ -138,7 +154,8 @@ static ASTNode *parse_block() {
 
 static ASTNode *parse_function() {
     // Accept either "func" or "void"
-    if (match(TOKEN_FUNC) || match(TOKEN_IDENTIFIER)) {
+    if (match(TOKEN_FUNC) || (peek() && peek()->type == TOKEN_IDENTIFIER && strcmp(peek()->lexeme,"void")==0)) {
+        if (peek() && strcmp(peek()->lexeme,"void")==0) advance(); // consume 'void'
         Token *name = advance(); // function name
         ASTNode *func = make_node(AST_FUNCTION, name ? name->lexeme : NULL);
         match(TOKEN_LPAREN);
@@ -150,6 +167,7 @@ static ASTNode *parse_function() {
     return NULL;
 }
 
+// --- public API ---
 ASTNode *parse(Token *toks, int c) {
     tokens = toks;
     pos = 0;
@@ -193,7 +211,15 @@ void print_ast(ASTNode *node, int indent) {
     if (!node) return;
     for (int i=0; i<indent; i++) printf("  ");
     printf("%s", node_type_name(node->type));
-    if (node->value) printf(" (%s)", node->value);
+    if (node->value) {
+        if (node->type == AST_LITERAL) {
+            const char *kind = (node->lit_kind==LIT_STRING)?"string":
+                               (node->lit_kind==LIT_CHAR)?"char":"int";
+            printf(" (%s: %s)", kind, node->value);
+        } else {
+            printf(" (%s)", node->value);
+        }
+    }
     printf("\n");
     for (int i=0; i<node->child_count; i++) {
         print_ast(node->children[i], indent+1);

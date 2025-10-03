@@ -1,6 +1,7 @@
 #include <pyppstdio>
 
 void main() {
-    pyppstdio.print("Hello, world!");
+    pyppstdio.print("Hello, world! (THE FOLLOWING LINE IS A TEST OF ESCAPE SEQUENCES)\n");
+    pyppstdio.print("New Line: \n: Tab \t : Backslash \\ : Single Quote \' : Double Quote \"\n");
     return 0;
 }

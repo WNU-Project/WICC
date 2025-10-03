@@ -13,6 +13,30 @@ static void gen_node(ASTNode *node, FILE *out, CodegenCtx *ctx);
 static void emit_data_section(ASTNode *ast, FILE *out);
 static void emit_text_section_header(FILE *out);
 
+// -------- Safe NASM string emitter --------
+static void emit_nasm_db_string(FILE *out, const char *label, const char *s) {
+    fprintf(out, "%s db ", label);
+
+    int open = 0;
+    for (size_t i = 0; s[i]; i++) {
+        unsigned char b = (unsigned char)s[i];
+        int printable = (b >= 32 && b != 127);
+
+        if (printable && b != '"') {
+            if (!open) { fprintf(out, "\""); open = 1; }
+            fputc(b, out);
+        } else if (printable && b == '"') {
+            if (!open) { fprintf(out, "\""); open = 1; }
+            fprintf(out, "\"\""); // NASM doubles quotes
+        } else {
+            if (open) { fprintf(out, "\""); open = 0; }
+            fprintf(out, ", %u", b);
+        }
+    }
+    if (open) fprintf(out, "\"");
+    fprintf(out, ", 0\n"); // null terminator
+}
+
 // -------- Public API: always write to "out.asm" --------
 int generate_asm_to_file(ASTNode *ast) {
     const char *out_path = "out.asm";
@@ -53,8 +77,9 @@ static void emit_data_section(ASTNode *ast, FILE *out) {
                 if (stmt && stmt->type == AST_PRINT && stmt->child_count > 0) {
                     ASTNode *lit = stmt->children[0];
                     if (lit && lit->type == AST_LITERAL && lit->value) {
-                        // Null-terminated string for printf
-                        fprintf(out, "str%d db %s, 0\n", strCount, lit->value);
+                        char label[32];
+                        snprintf(label, sizeof(label), "str%d", strCount);
+                        emit_nasm_db_string(out, label, lit->value);
                         strCount++;
                     }
                 }
@@ -93,10 +118,10 @@ static void gen_node(ASTNode *node, FILE *out, CodegenCtx *ctx) {
 
         case AST_PRINT:
             // Windows x64 ABI: RCX = first arg
-            fprintf(out, "    sub rsp, 40              ; shadow space\n");
+            fprintf(out, "    sub rsp, 32              ; shadow space\n");
             fprintf(out, "    lea rcx, [rel str%d]     ; RCX = &string\n", ctx->str_index);
             fprintf(out, "    call printf\n");
-            fprintf(out, "    add rsp, 40\n");
+            fprintf(out, "    add rsp, 32\n");
             ctx->str_index++;
             break;
 
