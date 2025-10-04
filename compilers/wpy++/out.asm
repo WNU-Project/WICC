@@ -1,7 +1,7 @@
 section .data
 fmt_str db "%s", 0
 str0 db "Hello, world! (THE FOLLOWING LINE IS A TEST OF ESCAPE SEQUENCES)", 10, 0
-str1 db "New Line: ", 10": Tab ", 9" : Backslash \ : Single Quote ' : Double Quote """, 10, 0
+str1 db "New Line: ", 10, ": Tab ", 9, " : Backslash \ : Single Quote ' : Double Quote """, 10, 0
 
 section .text
 extern printf

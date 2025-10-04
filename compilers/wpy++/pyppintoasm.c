@@ -20,19 +20,36 @@ static void emit_nasm_db_string(FILE *out, const char *label, const char *s) {
     fprintf(out, "%s db ", label);
 
     int open = 0;
+    int first_item = 1;
+    
     for (size_t i = 0; s[i]; i++) {
         unsigned char b = (unsigned char)s[i];
         int printable = (b >= 32 && b != 127);
 
         if (printable && b != '"') {
-            if (!open) { fprintf(out, "\""); open = 1; }
+            if (!open) { 
+                if (!first_item) fprintf(out, ", ");
+                fprintf(out, "\""); 
+                open = 1; 
+                first_item = 0;
+            }
             fputc(b, out);
         } else if (printable && b == '"') {
-            if (!open) { fprintf(out, "\""); open = 1; }
+            if (!open) { 
+                if (!first_item) fprintf(out, ", ");
+                fprintf(out, "\""); 
+                open = 1; 
+                first_item = 0;
+            }
             fprintf(out, "\"\""); // NASM doubles quotes inside strings
         } else {
-            if (open) { fprintf(out, "\""); open = 0; }
-            fprintf(out, ", %u", b);
+            if (open) { 
+                fprintf(out, "\""); 
+                open = 0; 
+            }
+            if (!first_item) fprintf(out, ", ");
+            fprintf(out, "%u", b);
+            first_item = 0;
         }
     }
     if (open) fprintf(out, "\"");
