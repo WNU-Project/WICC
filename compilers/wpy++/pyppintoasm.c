@@ -14,6 +14,8 @@ static void emit_data_section(ASTNode *ast, FILE *out);
 static void emit_text_section_header(FILE *out);
 
 // -------- Safe NASM string emitter --------
+// Emits a NASM-safe db line: printable bytes in quotes (with doubled `"`),
+// control bytes as numeric literals, and always appends a null terminator.
 static void emit_nasm_db_string(FILE *out, const char *label, const char *s) {
     fprintf(out, "%s db ", label);
 
@@ -27,7 +29,7 @@ static void emit_nasm_db_string(FILE *out, const char *label, const char *s) {
             fputc(b, out);
         } else if (printable && b == '"') {
             if (!open) { fprintf(out, "\""); open = 1; }
-            fprintf(out, "\"\""); // NASM doubles quotes
+            fprintf(out, "\"\""); // NASM doubles quotes inside strings
         } else {
             if (open) { fprintf(out, "\""); open = 0; }
             fprintf(out, ", %u", b);
@@ -66,6 +68,9 @@ int generate_asm_to_file(ASTNode *ast) {
 // -------- Helpers --------
 static void emit_data_section(ASTNode *ast, FILE *out) {
     fprintf(out, "section .data\n");
+
+    // Safe printf format string
+    fprintf(out, "fmt_str db \"%%s\", 0\n");
 
     int strCount = 0;
     for (int i = 0; i < ast->child_count; i++) {
@@ -117,9 +122,10 @@ static void gen_node(ASTNode *node, FILE *out, CodegenCtx *ctx) {
             break;
 
         case AST_PRINT:
-            // Windows x64 ABI: RCX = first arg
+            // Windows x64 ABI: RCX = format, RDX = string
             fprintf(out, "    sub rsp, 32              ; shadow space\n");
-            fprintf(out, "    lea rcx, [rel str%d]     ; RCX = &string\n", ctx->str_index);
+            fprintf(out, "    lea rcx, [rel fmt_str]   ; RCX = \"%%s\"\n");
+            fprintf(out, "    lea rdx, [rel str%d]     ; RDX = &string\n", ctx->str_index);
             fprintf(out, "    call printf\n");
             fprintf(out, "    add rsp, 32\n");
             ctx->str_index++;
@@ -130,13 +136,14 @@ static void gen_node(ASTNode *node, FILE *out, CodegenCtx *ctx) {
             if (node->child_count > 0 && node->children[0] && node->children[0]->value) {
                 imm = node->children[0]->value;
             }
-            fprintf(out, "    mov ecx, %s              ; exit code\n", imm);
+            fprintf(out, "    sub rsp, 32              ; shadow space\n");
+            fprintf(out, "    mov ecx, %s              ; RCX = exit code\n", imm);
             fprintf(out, "    call exit\n");
+            fprintf(out, "    add rsp, 32\n");
             break;
         }
 
         default:
-            // Ignore other nodes for now
             break;
     }
 }
