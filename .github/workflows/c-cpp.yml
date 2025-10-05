@@ -21,3 +21,11 @@ jobs:
         with:
           name: wpy-binary   # 👈 consistent name
           path: interpilers/wpy+/wpy+
+      - name: Build wpy++
+        working-directory: compilers/wpy++
+        run: make
+      - name: Upload binary (wpy++)
+        uses: actions/upload-artifact@v4
+        with:
+          name: wpypp-binary   # 👈 consistent name
+          path: compilers/wpy++/wpy++
