@@ -1,6 +1,7 @@
 // pyppgraphics.c
 #include <windows.h>
 #include <string.h>
+#include <strings.h>
 #include "pyppgraphics.h"
 
 // Global state (simple demo; you can encapsulate later)
@@ -18,11 +19,11 @@ static HWND g_hwnd = NULL;
 
 static COLORREF map_color(const char *name) {
     if (!name) return RGB(0,0,0);
-    if (strcasecmp(name, "black") == 0)  return RGB(0,0,0);
-    if (strcasecmp(name, "white") == 0)  return RGB(255,255,255);
-    if (strcasecmp(name, "red") == 0)    return RGB(220,20,60);
-    if (strcasecmp(name, "green") == 0)  return RGB(34,139,34);
-    if (strcasecmp(name, "blue") == 0)   return RGB(30,144,255);
+    if (strcmp(name, "black") == 0)  return RGB(0,0,0);
+    if (strcmp(name, "white") == 0)  return RGB(255,255,255);
+    if (strcmp(name, "red") == 0)    return RGB(220,20,60);
+    if (strcmp(name, "green") == 0)  return RGB(34,139,34);
+    if (strcmp(name, "blue") == 0)   return RGB(30,144,255);
     return RGB(0,0,0);
 }
 

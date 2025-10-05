@@ -1,5 +1,5 @@
 # Compiler and flags
-CC = gcc
+CC = C:\msys64\mingw64\bin\gcc.exe
 CFLAGS = -Wall -Wextra -std=c11
 
 # Output executable name

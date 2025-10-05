@@ -5,10 +5,10 @@ int gra_object_to_exe(const char *obj_file, const char *exe_file, int is32bit) {
     char cmd[512];
 
     if (is32bit) {
-        snprintf(cmd, sizeof(cmd), "C:\\msys64\\mingw64\\bin\\gcc.exe -m32 outgra.obj -o %s -lgdi32 -luser32 -Wl,-subsystem,windows", exe_file);
+        snprintf(cmd, sizeof(cmd), "C:\\msys64\\mingw64\\bin\\gcc.exe -m32 %s pyppgraphics.o -o %s -lgdi32 -luser32 -Wl,-subsystem,windows", obj_file, exe_file);
         printf("Linking (gra, 32-bit): %s\n", cmd);
     } else {
-        snprintf(cmd, sizeof(cmd), "C:\\msys64\\mingw64\\bin\\gcc.exe outgra.obj -o %s -lgdi32 -luser32 -Wl,-subsystem,windows", exe_file);
+        snprintf(cmd, sizeof(cmd), "C:\\msys64\\mingw64\\bin\\gcc.exe %s pyppgraphics.o -o %s -lgdi32 -luser32 -Wl,-subsystem,windows", obj_file, exe_file);
         printf("Linking (gra, 64-bit): %s\n", cmd);
     }
 
