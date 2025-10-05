@@ -31,7 +31,3 @@ Write-Host "Running version command..." -ForegroundColor DarkGreen
 # Run the win32 command
 # Write-Host "Running win32 command..." -ForegroundColor DarkGreen
 # .\wpy++.exe graphics.pypp --win32
-
-# Run the Output
-Write-Host "Running Output..." -ForegroundColor DarkGreen
-.\out.exe
