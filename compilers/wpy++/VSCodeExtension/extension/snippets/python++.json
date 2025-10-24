@@ -1,0 +1,105 @@
+{
+    "Main Function": {
+        "prefix": "main",
+        "body": [
+            "void main() {",
+            "\t$0",
+            "}"
+        ],
+        "description": "Create a main function"
+    },
+    "Print Statement": {
+        "prefix": "print",
+        "body": [
+            "pyppstdio.print(\"$1\");"
+        ],
+        "description": "Print a string to console"
+    },
+    "Include pyppstdio": {
+        "prefix": "include-stdio",
+        "body": [
+            "#include <pyppstdio>"
+        ],
+        "description": "Include pyppstdio library"
+    },
+    "Include graphics": {
+        "prefix": "include-graphics",
+        "body": [
+            "#include <graphics>"
+        ],
+        "description": "Include graphics library"
+    },
+    "Graphics Init": {
+        "prefix": "gfx-init",
+        "body": [
+            "graphics.Init(\"$1\", $2, $3);"
+        ],
+        "description": "Initialize graphics window"
+    },
+    "Graphics Clear": {
+        "prefix": "gfx-clear",
+        "body": [
+            "graphics.Clear(\"$1\");"
+        ],
+        "description": "Clear graphics with color"
+    },
+    "Graphics DrawText": {
+        "prefix": "gfx-text",
+        "body": [
+            "graphics.DrawText($1, $2, \"$3\");"
+        ],
+        "description": "Draw text on graphics"
+    },
+    "Graphics DrawRect": {
+        "prefix": "gfx-rect",
+        "body": [
+            "graphics.DrawRect($1, $2, $3, $4);"
+        ],
+        "description": "Draw rectangle on graphics"
+    },
+    "Graphics Loop": {
+        "prefix": "gfx-loop",
+        "body": [
+            "graphics.Loop();"
+        ],
+        "description": "Start graphics event loop"
+    },
+    "If Statement": {
+        "prefix": "if",
+        "body": [
+            "if ($1) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "If statement"
+    },
+    "If-Else Statement": {
+        "prefix": "ifelse",
+        "body": [
+            "if ($1) {",
+            "\t$2",
+            "} else {",
+            "\t$0",
+            "}"
+        ],
+        "description": "If-else statement"
+    },
+    "While Loop": {
+        "prefix": "while",
+        "body": [
+            "while ($1) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "While loop"
+    },
+    "For Loop": {
+        "prefix": "for",
+        "body": [
+            "for ($1; $2; $3) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "For loop"
+    }
+}

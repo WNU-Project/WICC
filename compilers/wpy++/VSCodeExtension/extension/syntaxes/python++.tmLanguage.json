@@ -1,0 +1,179 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Python++",
+    "scopeName": "source.python++",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#numbers"
+        },
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#functions"
+        },
+        {
+            "include": "#includes"
+        },
+        {
+            "include": "#identifiers"
+        },
+        {
+            "include": "#operators"
+        },
+        {
+            "include": "#punctuation"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-slash.python++",
+                    "match": "//.*$"
+                },
+                {
+                    "name": "comment.block.python++",
+                    "begin": "/\\*",
+                    "end": "\\*/"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.python++",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.python++",
+                            "match": "\\\\."
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.single.python++",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.python++",
+                            "match": "\\\\."
+                        }
+                    ]
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.python++",
+                    "match": "\\b\\d+\\b"
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.python++",
+                    "match": "\\b(if|else|while|for|return|func|void|int|char|string)\\b"
+                },
+                {
+                    "name": "keyword.other.python++",
+                    "match": "\\b(success|failure)\\b"
+                }
+            ]
+        },
+        "functions": {
+            "patterns": [
+                {
+                    "name": "entity.name.function.python++",
+                    "match": "\\b(main|print)\\b"
+                },
+                {
+                    "name": "support.function.python++",
+                    "match": "\\b(pyppstdio|graphics)\\.(\\w+)\\b"
+                }
+            ]
+        },
+        "includes": {
+            "patterns": [
+                {
+                    "name": "meta.preprocessor.include.python++",
+                    "begin": "#include",
+                    "end": "$",
+                    "patterns": [
+                        {
+                            "name": "string.quoted.other.lt-gt.include.python++",
+                            "begin": "<",
+                            "end": ">"
+                        }
+                    ]
+                }
+            ]
+        },
+        "identifiers": {
+            "patterns": [
+                {
+                    "name": "variable.other.python++",
+                    "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+                }
+            ]
+        },
+        "operators": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.assignment.python++",
+                    "match": "="
+                },
+                {
+                    "name": "keyword.operator.comparison.python++",
+                    "match": "(==|!=|<|>|<=|>=)"
+                },
+                {
+                    "name": "keyword.operator.arithmetic.python++",
+                    "match": "(\\+|\\-|\\*|\\/)"
+                }
+            ]
+        },
+        "punctuation": {
+            "patterns": [
+                {
+                    "name": "punctuation.terminator.statement.python++",
+                    "match": ";"
+                },
+                {
+                    "name": "punctuation.separator.comma.python++",
+                    "match": ","
+                },
+                {
+                    "name": "punctuation.accessor.python++",
+                    "match": "\\."
+                },
+                {
+                    "name": "punctuation.section.block.begin.python++",
+                    "match": "\\{"
+                },
+                {
+                    "name": "punctuation.section.block.end.python++",
+                    "match": "\\}"
+                },
+                {
+                    "name": "punctuation.section.parens.begin.python++",
+                    "match": "\\("
+                },
+                {
+                    "name": "punctuation.section.parens.end.python++",
+                    "match": "\\)"
+                }
+            ]
+        }
+    }
+}

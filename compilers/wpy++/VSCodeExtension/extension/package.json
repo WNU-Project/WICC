@@ -1,0 +1,156 @@
+{
+    "name": "pythonplusplus-vscode-extension",
+    "displayName": "Python++ Support For VS Code",
+    "description": "Provides support for Python++ in Visual Studio Code, including syntax highlighting, code snippets, compiler selection, and more.",
+    "version": "1.0.0",
+    "publisher": "WNU-Project",
+    "engines": {
+        "vscode": ">=1.85.0"
+    },
+    "main": "./extension.js",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/WNU-Project/WICC.git"
+    },
+    "activationEvents": [],
+    "contributes": {
+        "languages": [
+            {
+                "id": "python++",
+                "aliases": ["Python++", "python++"],
+                "extensions": [".pypp"],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "python++",
+                "scopeName": "source.python++",
+                "path": "./syntaxes/python++.tmLanguage.json"
+            }
+        ],
+        "snippets": [
+            {
+                "language": "python++",
+                "path": "./snippets/python++.json"
+            }
+        ],
+        "commands": [
+            {
+                "command": "python++.compile",
+                "title": "Compile Python++ File",
+                "category": "Python++"
+            },
+            {
+                "command": "python++.run",
+                "title": "Compile and Run Python++ File",
+                "category": "Python++",
+                "icon": "$(play)"
+            },
+            {
+                "command": "python++.selectCompiler",
+                "title": "Select Python++ Compiler",
+                "category": "Python++"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "python++.compile",
+                "key": "ctrl+shift+b",
+                "when": "editorTextFocus && resourceExtname == '.pypp'"
+            },
+            {
+                "command": "python++.run",
+                "key": "f5",
+                "when": "editorTextFocus && resourceExtname == '.pypp'"
+            }
+        ],
+        "menus": {
+            "editor/title/run": [
+                {
+                    "command": "python++.run",
+                    "when": "resourceExtname == .pypp",
+                    "group": "navigation"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "python++.run",
+                    "when": "resourceExtname == .pypp",
+                    "group": "navigation"
+                },
+                {
+                    "command": "python++.compile",
+                    "when": "resourceExtname == .pypp",
+                    "group": "navigation"
+                },
+                {
+                    "command": "python++.selectCompiler",
+                    "when": "resourceExtname == .pypp",
+                    "group": "navigation"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "python++.compile",
+                    "when": "resourceExtname == .pypp"
+                },
+                {
+                    "command": "python++.run",
+                    "when": "resourceExtname == .pypp"
+                },
+                {
+                    "command": "python++.selectCompiler"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "Python++",
+            "properties": {
+                "python++.compilerPath": {
+                    "type": "string",
+                    "default": "wpy++.exe",
+                    "description": "Path to the Python++ compiler executable"
+                },
+                "python++.availableCompilers": {
+                    "type": "array",
+                    "default": [
+                        {
+                            "name": "WPY++ (Default)",
+                            "path": "wpy++.exe",
+                            "description": "Default Python++ compiler"
+                        },
+                        {
+                            "name": "WPY++ (Local)",
+                            "path": "./wpy++.exe",
+                            "description": "Local Python++ compiler"
+                        }
+                    ],
+                    "description": "List of available Python++ compilers",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Display name for the compiler"
+                            },
+                            "path": {
+                                "type": "string",
+                                "description": "Path to the compiler executable"
+                            },
+                            "description": {
+                                "type": "string",
+                                "description": "Description of the compiler"
+                            }
+                        }
+                    }
+                },
+                "python++.selectedCompiler": {
+                    "type": "string",
+                    "default": "wpy++.exe",
+                    "description": "Currently selected Python++ compiler path"
+                }
+            }
+        }
+    }
+}
